@@ -1,4 +1,8 @@
 
+// Bindings related to Limine boot protocol.
+// Docs:   https://github.com/limine-bootloader/limine/blob/v3.0-branch/PROTOCOL.md
+// Source: https://github.com/limine-bootloader/limine/blob/v3.0-branch/limine.h
+
 package limine
 
 COMMON_MAGIC_1 :: 0xc7b1dd30df4c8b88
@@ -11,9 +15,11 @@ UUID :: struct {
     d: [8]u8,
 }
 
-MEDIA_TYPE_GENERIC :: 0
-MEDIA_TYPE_OPTICAL :: 1
-MEDIA_TYPE_TFTP    :: 2
+Media_Type :: enum u32 {
+    GENERIC = 0,
+    OPTICAL = 1,
+    TFTP    = 2,
+}
 
 File :: struct {
     revision:        u64,
@@ -21,7 +27,7 @@ File :: struct {
     size:            u64,
     path:            [^]u8,
     cmdline:         [^]u8,
-    media_type:      u32,
+    media_type:      Media_Type,
     unused:          u32,
     tftp_ip:         u32,
     tftp_port:       u32,
@@ -79,7 +85,7 @@ HHDM_REQUEST :: [4]u64{
     COMMON_MAGIC_1,
     COMMON_MAGIC_2,
     0x48dcf1cb8ad2b852,
-    0x63984e959a98244b
+    0x63984e959a98244b,
 }
 
 HHDM_Response :: struct {
@@ -99,7 +105,7 @@ FRAMEBUFFER_REQUEST :: [4]u64{
     COMMON_MAGIC_1,
     COMMON_MAGIC_2,
     0x9d5827dcd881dd75,
-    0xa3148604f6fab11b
+    0xa3148604f6fab11b,
 }
 
 FRAMEBUFFER_RGB :: u8(1)
@@ -157,17 +163,19 @@ TERMINAL_REQUEST :: [4]u64{
     COMMON_MAGIC_1,
     COMMON_MAGIC_2,
     0xc8ac59310c2b0844,
-    0xa68d0c7265d38878
+    0xa68d0c7265d38878,
 }
 
-TERMINAL_CB_DEC            :: 10
-TERMINAL_CB_BELL           :: 20
-TERMINAL_CB_PRIVATE_ID     :: 30
-TERMINAL_CB_STATUS_REPORT  :: 40
-TERMINAL_CB_POS_REPORT     :: 50
-TERMINAL_CB_KBD_LEDS       :: 60
-TERMINAL_CB_MODE           :: 70
-TERMINAL_CB_LINUX          :: 80
+Terminal_Cb_Type :: enum u64 {
+    Cb_Dec            = 10,
+    Cb_Bell           = 20,
+    Cb_Private_Id     = 30,
+    Cb_Status_Report  = 40,
+    Cb_Pos_Report     = 50,
+    Cb_Kbd_Leds       = 60,
+    Cb_Mode           = 70,
+    Cb_Linux          = 80,
+}
 
 TERMINAL_CTX_SIZE          :: transmute(u64)i64(-1)
 TERMINAL_CTX_SAVE          :: transmute(u64)i64(-2)
@@ -187,8 +195,8 @@ TERMINAL_OOB_OUTPUT_ONLRET :: (1 << 5)
 TERMINAL_OOB_OUTPUT_ONOCR  :: (1 << 6)
 TERMINAL_OOB_OUTPUT_OPOST  :: (1 << 7)
 
-Terminal_Write :: #type proc "c" (term: ^Terminal, str: [^]u8, len: u64)
-Terminal_Callback :: #type proc "c" (term: ^Terminal, type: u64, arg1, arg2, arg3: u64)
+Terminal_Write :: #type proc "sysv" (term: ^Terminal, str: [^]u8, len: u64)
+Terminal_Callback :: #type proc "sysv" (term: ^Terminal, type: u64, arg1, arg2, arg3: u64)
 
 Terminal :: struct {
     columns:     u64,
@@ -235,10 +243,10 @@ SMP_REQUEST :: [4]u64{
     COMMON_MAGIC_1,
     COMMON_MAGIC_2,
     0x95a67b819a1b857e,
-    0xa0b61b723b6a73e0
+    0xa0b61b723b6a73e0,
 }
 
-Goto_Address :: #type proc "c" (smp_info: ^SMP_Info)
+Goto_Address :: #type proc "sysv" (smp_info: ^SMP_Info)
 
 SMP_X2APIC :: (1 << 0)
 
@@ -292,14 +300,16 @@ MEMMAP_REQUEST :: [4]u64{
     0xe304acdfc50c3c62,
 }
 
-MEMMAP_USABLE                 :: 0
-MEMMAP_RESERVED               :: 1
-MEMMAP_ACPI_RECLAIMABLE       :: 2
-MEMMAP_ACPI_NVS               :: 3
-MEMMAP_BAD_MEMORY             :: 4
-MEMMAP_BOOTLOADER_RECLAIMABLE :: 5
-MEMMAP_KERNEL_AND_MODULES     :: 6
-MEMMAP_FRAMEBUFFER            :: 7
+Memmap_Type :: enum u64 {
+    Usable                 = 0,
+    Reserved               = 1,
+    Acpi_Reclaimable       = 2,
+    Acpi_Nvs               = 3,
+    Bad_Memory             = 4,
+    Bootloader_Reclaimable = 5,
+    Kernel_And_Modules     = 6,
+    Framebuffer            = 7,
+}
 
 Memmap_Entry :: struct {
     base:   u64,
@@ -310,7 +320,7 @@ Memmap_Entry :: struct {
 Memmap_Response :: struct {
     revision:    u64,
     entry_count: u64,
-    entries:     ^^Memmap_Entry,
+    entries:     [^]^Memmap_Entry,
 }
 
 Memmap_Request :: struct {
@@ -325,10 +335,10 @@ ENTRY_POINT_REQUEST :: [4]u64{
     COMMON_MAGIC_1,
     COMMON_MAGIC_2,
     0x13d86c035a1cd3e1,
-    0x2b0caa89d8f3026a
+    0x2b0caa89d8f3026a,
 }
 
-Entry_Point :: #type proc "c" ()
+Entry_Point :: #type proc "sysv" ()
 
  Entry_Point_Response :: struct {
     revision: u64,
@@ -347,7 +357,7 @@ KERNEL_FILE_REQUEST :: [4]u64{
     COMMON_MAGIC_1,
     COMMON_MAGIC_2,
     0xad97e90e83f1ed67,
-    0x31eb5d1c5ff23b69
+    0x31eb5d1c5ff23b69,
 }
 
 Kernel_File_Response :: struct {
@@ -429,7 +439,7 @@ EFI_SYSTEM_TABLE_REQUEST :: [4]u64{
     COMMON_MAGIC_1,
     COMMON_MAGIC_2,
     0x5ceba5163eaaf6d6,
-    0x0a6981610cf65fcc
+    0x0a6981610cf65fcc,
 }
 
 EFI_System_Table_Response :: struct {
@@ -449,7 +459,7 @@ BOOT_TIME_REQUEST :: [4]u64{
     COMMON_MAGIC_1,
     COMMON_MAGIC_2,
     0x502746e184c088aa,
-    0xfbc5ec83e6327893
+    0xfbc5ec83e6327893,
 }
 
 Boot_Time_Response :: struct {
@@ -490,7 +500,7 @@ DTB_REQUEST :: [4]u64{
     COMMON_MAGIC_1,
     COMMON_MAGIC_2,
     0xb40ddb48fb54bac7,
-    0x545081493f81ffb7
+    0x545081493f81ffb7,
 }
 
 DTB_Response :: struct {
@@ -503,4 +513,3 @@ DTB_Request :: struct {
     revision: u64,
     response: ^DTB_Response,
 }
-
